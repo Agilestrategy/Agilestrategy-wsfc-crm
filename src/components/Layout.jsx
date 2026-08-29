@@ -15,7 +15,7 @@ export default function Layout({ children }) {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <img src="/favicon.svg" alt="" />
+          <img src="/wsfc-logo-256.png" alt="Whakatane Sportfishing Club" />
           <div><strong>WSFC Club CRM</strong><span>Whakatane Sportfishing Club</span></div>
         </div>
         <nav className="nav">
@@ -29,7 +29,7 @@ export default function Layout({ children }) {
           <button onClick={signOut}>Sign out</button>
         </div>
       </aside>
-      <main className="main">{children}</main>
+      <main className="main watermark">{children}</main>
     </div>
   )
 }
