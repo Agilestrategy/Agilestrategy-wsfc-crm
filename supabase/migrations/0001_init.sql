@@ -46,6 +46,7 @@ create table if not exists staff (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+drop trigger if exists staff_updated on staff;
 create trigger staff_updated before update on staff for each row execute function set_updated_at();
 
 -- Current caller is active staff?
@@ -131,6 +132,7 @@ create table if not exists households (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+drop trigger if exists households_updated on households;
 create trigger households_updated before update on households for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------------
@@ -174,6 +176,7 @@ create table if not exists members (
   updated_at timestamptz not null default now(),
   full_name text generated always as (btrim(coalesce(first_name,'') || ' ' || coalesce(last_name,''))) stored
 );
+drop trigger if exists members_updated on members;
 create trigger members_updated before update on members for each row execute function set_updated_at();
 
 create unique index if not exists members_email_unique on members (lower(email)) where email is not null and email <> '';
@@ -289,6 +292,7 @@ create table if not exists email_contacts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+drop trigger if exists email_contacts_updated on email_contacts;
 create trigger email_contacts_updated before update on email_contacts for each row execute function set_updated_at();
 create index if not exists email_contacts_status_idx on email_contacts (status);
 create index if not exists email_contacts_name_idx on email_contacts (lower(last_name), lower(first_name));
@@ -296,7 +300,8 @@ create index if not exists email_contacts_name_idx on email_contacts (lower(last
 -- ---------------------------------------------------------------------------
 -- Views
 -- ---------------------------------------------------------------------------
-create or replace view v_member_list as
+drop view if exists v_member_list;
+create view v_member_list as
 select m.id, m.member_number, m.first_name, m.last_name, m.full_name, m.email, m.email_status,
        m.mobile, m.phone, m.status, m.financial_until, m.joined_on, m.city, m.suburb,
        c.code as category_code, c.name as category_name,
