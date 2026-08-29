@@ -1,0 +1,14 @@
+{
+  "name": "WSFC Members",
+  "short_name": "WSFC",
+  "description": "Whakatāne Sportfishing Club member app: your status, check-ins and club news.",
+  "start_url": "/me",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1B2F3E",
+  "theme_color": "#1B2F3E",
+  "icons": [
+    { "src": "/wsfc-logo-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/wsfc-logo.png", "sizes": "800x800", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
