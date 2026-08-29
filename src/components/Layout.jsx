@@ -5,6 +5,9 @@ const links = [
   ['/', 'Dashboard'],
   ['/members', 'Members'],
   ['/contacts', 'Email contacts'],
+  ['/status', 'Status programme'],
+  ['/checkins', 'Check-in codes'],
+  ['/notify', 'Notifications'],
   ['/import', 'Import'],
   ['/staff', 'Staff'],
 ]
