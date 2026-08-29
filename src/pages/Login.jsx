@@ -18,9 +18,9 @@ export default function Login() {
   }
 
   return (
-    <div className="login">
+    <div className="login watermark">
       <div className="card">
-        <div className="brand"><img src="/favicon.svg" alt="" /><div><strong>WSFC Club CRM</strong><span>Whakatane Sportfishing Club</span></div></div>
+        <div className="brand login-brand"><img src="/wsfc-logo.png" alt="Whakatane Sportfishing Club" /><div><strong>WSFC Club CRM</strong><span>Whakatane Sportfishing Club</span></div></div>
         {sent ? (
           <div className="alert ok">Check your inbox. We sent a sign-in link to <b>{email}</b>. It opens this console.</div>
         ) : (
