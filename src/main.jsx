@@ -12,6 +12,10 @@ import MemberDetail from './pages/MemberDetail'
 import Contacts from './pages/Contacts'
 import ImportPage from './pages/Import'
 import Staff from './pages/Staff'
+import Status from './pages/Status'
+import Checkins from './pages/Checkins'
+import Notify from './pages/Notify'
+import MemberApp from './me/MemberApp'
 
 function Gate({ children }) {
   const { session, staff, loading } = useAuth()
@@ -42,24 +46,36 @@ function NotStaff() {
   )
 }
 
+function Console() {
+  return (
+    <AuthProvider>
+      <Gate>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/members" element={<Members />} />
+            <Route path="/members/:id" element={<MemberDetail />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/import" element={<ImportPage />} />
+            <Route path="/status" element={<Status />} />
+            <Route path="/checkins" element={<Checkins />} />
+            <Route path="/notify" element={<Notify />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Layout>
+      </Gate>
+    </AuthProvider>
+  )
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <Gate>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/members" element={<Members />} />
-              <Route path="/members/:id" element={<MemberDetail />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/import" element={<ImportPage />} />
-              <Route path="/staff" element={<Staff />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
-        </Gate>
-      </AuthProvider>
+      <Routes>
+        <Route path="/me/*" element={<MemberApp />} />
+        <Route path="/*" element={<Console />} />
+      </Routes>
     </BrowserRouter>
   </React.StrictMode>,
 )

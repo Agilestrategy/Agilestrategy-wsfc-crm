@@ -121,3 +121,7 @@ label.f > * { font-size: .95rem; color: var(--ink); }
 .login-brand img { width: 64px; height: 64px; }
 .login .brand { color: var(--ink); }
 .login .brand span { color: var(--grey); }
+
+/* Status programme */
+.tier-card-black { border-top-color: #000; } .tier-card-gold { border-top-color: #C9A227; } .tier-card-silver { border-top-color: #98a2ad; }
+.pill.tier-black { background: #111; color: #E7C74F; } .pill.tier-gold { background: #f3e2a2; color: #6b4f00; } .pill.tier-silver { background: #e6e9ec; color: #3b4753; }
