@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, Link, useNavigate, useParams, Navigate } from 'react-router-dom'
 import { supabase, configured, fmtDate } from '../lib/supabase'
 import { enablePush, disablePush, currentPushState, pushSupported, isIOS, isStandalone, registerSW } from '../lib/push'
@@ -161,6 +161,10 @@ function Checkin({ member, reload }) {
   )
 }
 
+function Field({ label, type = 'text', value, onChange, ...rest }) {
+  return <label>{label}<input type={type} value={value} onChange={onChange} autoComplete="off" {...rest} /></label>
+}
+
 function Details({ member, reload }) {
   const [f, setF] = useState({ first_name: member.first_name || '', last_name: member.last_name || '', preferred_name: member.preferred_name || '', mobile: member.mobile || '', phone: member.phone || '',
     email: member.email || '', date_of_birth: member.date_of_birth || '', address_line1: member.address_line1 || '', suburb: member.suburb || '', city: member.city || '', postcode: member.postcode || '', boat_name: member.boat_name || '' })
@@ -172,24 +176,54 @@ function Details({ member, reload }) {
     const { error } = await supabase.from('members').update({ ...patch, details_confirmed_at: new Date().toISOString() }).eq('id', member.id)
     setMsg(error ? error.message : 'Saved. Thanks for keeping us up to date.'); if (!error) reload()
   }
-  const F = ({ k, label, type = 'text' }) => <label>{label}<input type={type} value={f[k]} onChange={set(k)} /></label>
   return (
     <>
       <Brand sub="My details" />
       <form className="me-card me-form" onSubmit={save}>
-        <div className="me-grid"><F k="first_name" label="First name" /><F k="last_name" label="Last name" /></div>
-        <F k="preferred_name" label="What we should call you" />
-        <F k="mobile" label="Mobile" type="tel" /><F k="email" label="Email" type="email" />
-        <F k="date_of_birth" label="Date of birth" type="date" />
-        <F k="address_line1" label="Street address" />
-        <div className="me-grid"><F k="suburb" label="Suburb" /><F k="city" label="Town / city" /></div>
-        <F k="postcode" label="Postcode" /><F k="boat_name" label="Boat name (if you have one)" />
+        <div className="me-grid"><Field label="First name" value={f.first_name} onChange={set('first_name')} /><Field label="Last name" value={f.last_name} onChange={set('last_name')} /></div>
+        <Field label="What we should call you" value={f.preferred_name} onChange={set('preferred_name')} />
+        <Field label="Mobile" type="tel" value={f.mobile} onChange={set('mobile')} /><Field label="Email" type="email" value={f.email} onChange={set('email')} />
+        <Field label="Date of birth" type="date" value={f.date_of_birth} onChange={set('date_of_birth')} />
+        <AddressField value={f.address_line1} onChange={set('address_line1')} onPlace={(a) => setF((cur) => ({ ...cur, ...a }))} />
+        <div className="me-grid"><Field label="Suburb" value={f.suburb} onChange={set('suburb')} /><Field label="Town / city" value={f.city} onChange={set('city')} /></div>
+        <Field label="Postcode" value={f.postcode} onChange={set('postcode')} /><Field label="Boat name (if you have one)" value={f.boat_name} onChange={set('boat_name')} />
         {msg && <p className="me-ok">{msg}</p>}
         <button className="me-btn">Save my details</button>
         <button type="button" className="me-btn ghost" onClick={() => nav('/me')}>Back</button>
       </form>
     </>
   )
+}
+
+// Google Places autocomplete (NZ only). Works as a plain text box if no key is configured.
+const GKEY = import.meta.env.VITE_GOOGLE_MAPS_KEY
+let gmapsPromise
+function loadGoogle() {
+  if (!GKEY) return Promise.resolve(null)
+  if (window.google?.maps?.places) return Promise.resolve(window.google)
+  if (!gmapsPromise) gmapsPromise = new Promise((res) => {
+    const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${GKEY}&libraries=places&region=NZ&loading=async`
+    s.async = true; s.onload = () => res(window.google); s.onerror = () => res(null); document.head.appendChild(s)
+  })
+  return gmapsPromise
+}
+function AddressField({ value, onChange, onPlace }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    let ac
+    loadGoogle().then((g) => {
+      if (!g || !ref.current) return
+      ac = new g.maps.places.Autocomplete(ref.current, { componentRestrictions: { country: 'nz' }, fields: ['address_components'], types: ['address'] })
+      ac.addListener('place_changed', () => {
+        const comps = ac.getPlace()?.address_components || []
+        const get = (t) => comps.find((c) => c.types.includes(t))?.long_name || ''
+        const street = [get('street_number'), get('route')].filter(Boolean).join(' ')
+        onPlace({ address_line1: street || ref.current.value, suburb: get('sublocality_level_1') || get('sublocality') || get('neighborhood') || '', city: get('locality') || get('administrative_area_level_2') || '', postcode: get('postal_code') || '' })
+      })
+    })
+    return () => { if (ac && window.google) window.google.maps.event.clearInstanceListeners(ac) }
+  }, [])
+  return <label>Street address<input ref={ref} type="text" value={value} onChange={onChange} placeholder={GKEY ? 'Start typing your address' : ''} autoComplete="off" /></label>
 }
 
 function Activity({ member }) {
