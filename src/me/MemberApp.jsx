@@ -4,6 +4,8 @@ import { supabase, configured, fmtDate } from '../lib/supabase'
 import { enablePush, disablePush, currentPushState, pushSupported, isIOS, isStandalone, registerSW } from '../lib/push'
 import './me.css'
 import Shop from './Shop'
+import { isDemo } from '../lib/demo'
+import { DemoBanner, DemoPay } from './Demo'
 
 const TIER = {
   black: { label: 'Black', blurb: 'Our most active members. Thank you.' },
@@ -40,7 +42,8 @@ export default function MemberApp() {
   if (!session) return <MeLogin />
   if (!member) return <NoRecord email={session.user.email} />
   return (
-    <div className="me">
+    <div className={`me ${isDemo() ? 'is-demo' : ''}`}>
+      {isDemo() && <DemoBanner member={member} />}
       <Routes>
         <Route path="/" element={<Home member={member} reload={loadMember} />} />
         <Route path="/checkin/:code" element={<Checkin member={member} reload={loadMember} />} />
@@ -48,6 +51,7 @@ export default function MemberApp() {
         <Route path="/activity" element={<Activity member={member} />} />
         <Route path="/orders" element={<Orders member={member} />} />
         <Route path="/shop" element={<Shop member={member} Brand={Brand} />} />
+        {isDemo() && <Route path="/pay" element={<DemoPay />} />}
         <Route path="*" element={<Navigate to="/me" replace />} />
       </Routes>
     </div>

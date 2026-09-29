@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isDemo, demoPlaceOrder } from '../lib/demo'
 
 const money = (n) => '$' + Number(n || 0).toFixed(2).replace(/\.00$/, '')
 const CART_KEY = 'wsfc-cart'
@@ -51,6 +52,11 @@ export default function Shop({ member, Brand }) {
   async function checkout(pay) {
     setBusy(pay); setMsg('')
     try {
+      if (isDemo()) {
+        const j = demoPlaceOrder(cart.map((l) => ({ product_id: l.product_id, quantity: l.quantity, options: l.options })), pay)
+        if (j.url) { window.location.href = j.url; return }
+        setCart([]); window.location.href = `/me/orders?placed=${j.order_id}`; return
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setMsg('Your sign in has expired. Please sign in again.'); setBusy(''); return }
       const r = await fetch('/.netlify/functions/shop-order', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
