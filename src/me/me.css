@@ -60,11 +60,18 @@
 .shop-tile-body span { font-size: .9rem; opacity: .85; }
 .shop-tile-body em { font-style: normal; font-size: .72rem; color: #E8863A; font-weight: 700; }
 .shop-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-.shop-chip { font: inherit; font-size: .85rem; padding: .35rem .7rem; border-radius: 999px; border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; cursor: pointer; }
+.shop-chip { font: inherit; font-size: .95rem; min-height: 40px; padding: .4rem .9rem; border-radius: 999px; border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; cursor: pointer; }
 .shop-chip.on { background: var(--me-accent); color: #fff; border-color: var(--me-accent); }
 :root[data-tier="gold"] .shop-chip.on, :root[data-tier="silver"] .shop-chip.on { color: #fff; }
 .shop-qty { display: inline-flex; align-items: center; border: 1.5px solid rgba(0,0,0,.15); border-radius: 999px; overflow: hidden; }
-.shop-qty button { font: inherit; font-size: 1.1rem; width: 36px; height: 36px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.shop-qty button { font: inherit; font-size: 1.2rem; width: 42px; height: 40px; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .shop-qty span { min-width: 28px; text-align: center; font-weight: 700; }
-.shop-x { border: 0; background: transparent; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
+.shop-x { border: 0; background: transparent; color: inherit; font-size: 1.3rem; line-height: 1; min-width: 40px; min-height: 40px; cursor: pointer; opacity: .6; }
+.shop-tile { -webkit-tap-highlight-color: transparent; }
+.shop-tile:active { transform: scale(.98); }
+@media (max-width: 360px) { .shop-grid { grid-template-columns: 1fr 1fr; gap: .5rem; } .shop-tile-body b { font-size: .85rem; } }
 .me-btn:disabled { opacity: .5; }
+
+.shop-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(.75rem + env(safe-area-inset-bottom)); width: min(calc(100% - 2rem), 560px); display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .8rem 1rem; border: 0; border-radius: 999px; background: var(--me-accent, #14304a); color: #fff; font: inherit; font-size: .95rem; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 20; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.shop-bar:active { transform: translateX(-50%) scale(.98); }
+.shop-bar-space { height: 4.5rem; }

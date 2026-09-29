@@ -156,9 +156,16 @@ function Orders({ member }) {
   const [rows, setRows] = useState(null); const [shop, setShop] = useState(null)
   const STATUS = { awaiting_payment: 'Awaiting payment (pay at the bar)', paid: 'Paid, waiting for the next run', in_next_run: 'In this week\u2019s production run', sent_to_mark: 'In production', at_club: 'At the club, ready to collect', collected: 'Collected', cancelled: 'Cancelled' }
   const q = new URLSearchParams(window.location.search); const placed = q.get('placed'); const paid = q.get('paid')
+  const load = () => supabase.from('shop_orders').select('*, shop_order_items(*)').order('shopify_created_at', { ascending: false }).then(({ data }) => setRows(data || []))
   useEffect(() => {
-    supabase.from('shop_orders').select('*, shop_order_items(*)').order('shopify_created_at', { ascending: false }).then(({ data }) => setRows(data || []))
+    load()
     supabase.from('shop_settings').select('store_url').eq('id', 1).maybeSingle().then(({ data }) => setShop(data?.store_url || null))
+    if (paid) {
+      try { localStorage.removeItem('wsfc-cart') } catch { /* ignore */ }
+      // Stripe's webhook can land a few seconds after the redirect: re-read until the order shows as paid.
+      let n = 0; const t = setInterval(() => { load(); if (++n >= 8) clearInterval(t) }, 2500)
+      return () => clearInterval(t)
+    }
   }, [member.id])
   return (
     <>
@@ -169,7 +176,7 @@ function Orders({ member }) {
       {rows === null ? <div className="me-card">Loading…</div> : rows.length === 0 ? <div className="me-card"><p className="me-muted">No orders yet.</p></div> : rows.map((o) => (
         <div key={o.id} className="me-card">
           <h2>{o.order_number} <span className="me-muted" style={{ fontWeight: 400, fontSize: '.85em' }}>{fmtDate(o.shopify_created_at)}</span></h2>
-          <p><b>{STATUS[o.status] || o.status}</b></p>
+          <p><b>{o.status === 'awaiting_payment' && o.payment_method === 'stripe' ? 'Confirming payment…' : STATUS[o.status] || o.status}</b></p>
           {o.shop_order_items.map((i) => <p key={i.id} className="me-muted">{i.quantity} × {i.title}{i.variant_title ? ` (${i.variant_title})` : ''}</p>)}
           <p className="me-muted">Total ${Number(o.total || 0).toFixed(2)}</p>
         </div>

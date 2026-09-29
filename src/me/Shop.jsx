@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -17,19 +17,24 @@ export default function Shop({ member, Brand }) {
   const [msg, setMsg] = useState('')
   const [stripeOn, setStripeOn] = useState(true)
   const [params] = useSearchParams()
+  const pickerRef = useRef(null)
+  const [cartSeen, setCartSeen] = useState(false)
 
   useEffect(() => {
     supabase.from('shop_products').select('id, title, description, retail_price, options, image_url, is_preorder, preorder_target, lead_time, sort')
       .eq('is_active', true).not('retail_price', 'is', null).order('sort').then(({ data }) => setProducts(data || []))
-    supabase.from('shop_settings').select('store_url').eq('id', 1).maybeSingle().then(() => {})
     if (params.get('cancelled')) setMsg('Payment was cancelled. Your items are still in the cart.')
   }, [])
   useEffect(() => { saveCart(cart) }, [cart])
+  useEffect(() => {
+    const el = document.getElementById('cart'); if (!el || !('IntersectionObserver' in window)) return
+    const io = new IntersectionObserver(([e]) => setCartSeen(e.isIntersecting), { threshold: 0.15 }); io.observe(el); return () => io.disconnect()
+  }, [products])
 
   const total = useMemo(() => cart.reduce((a, l) => a + l.price * l.quantity, 0), [cart])
   const count = cart.reduce((a, l) => a + l.quantity, 0)
 
-  function startAdd(p) { setOpen(p); setPick({}); setQty(1); setMsg('') }
+  function startAdd(p) { setOpen(p); setPick({}); setQty(1); setMsg(''); setTimeout(() => pickerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30) }
   function confirmAdd() {
     const p = open; const opts = p.options || {}
     for (const k of Object.keys(opts)) if (Array.isArray(opts[k]) && opts[k].length && !pick[k]) { setMsg(`Choose a ${k.toLowerCase()}.`); return }
@@ -47,12 +52,13 @@ export default function Shop({ member, Brand }) {
     setBusy(pay); setMsg('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setMsg('Your sign in has expired. Please sign in again.'); setBusy(''); return }
       const r = await fetch('/.netlify/functions/shop-order', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ items: cart.map((l) => ({ product_id: l.product_id, quantity: l.quantity, options: l.options })), pay }) })
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { if (/not switched on/.test(j.error || '')) setStripeOn(false); setMsg(j.error || 'Something went wrong.'); setBusy(''); return }
+      if (j.url) { window.location.href = j.url; return }   // cart is cleared on the orders page once payment succeeds
       setCart([])
-      if (j.url) { window.location.href = j.url; return }
       window.location.href = `/me/orders?placed=${j.order_id}`
     } catch (e) { setMsg(e.message); setBusy('') }
   }
@@ -66,7 +72,7 @@ export default function Shop({ member, Brand }) {
       {msg && <div className="me-card"><p className="me-ok" style={{ margin: 0 }}>{msg}</p></div>}
 
       {open && (
-        <div className="me-card" style={{ border: '2px solid var(--me-accent)' }}>
+        <div ref={pickerRef} className="me-card" style={{ border: '2px solid var(--me-accent)', scrollMarginTop: '.5rem' }}>
           <h2>{open.title} <span className="me-muted" style={{ fontWeight: 400 }}>{money(open.retail_price)}</span></h2>
           {open.description && <p className="me-muted">{open.description}</p>}
           {Object.entries(open.options || {}).map(([k, vals]) => Array.isArray(vals) && vals.length ? (
@@ -75,7 +81,7 @@ export default function Shop({ member, Brand }) {
               <div className="shop-chips">{vals.map((v) => <button key={v} type="button" className={`shop-chip ${pick[k] === v ? 'on' : ''}`} onClick={() => setPick({ ...pick, [k]: v })}>{v}</button>)}</div>
             </div>
           ) : null)}
-          <div className="me-row" style={{ alignItems: 'center', marginTop: '.5rem' }}>
+          <div className="me-row" style={{ alignItems: 'center', marginTop: '.5rem', flexWrap: 'wrap' }}>
             <div className="shop-qty"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))}>−</button><span>{qty}</span><button type="button" onClick={() => setQty(Math.min(20, qty + 1))}>+</button></div>
             <button className="me-btn" type="button" onClick={confirmAdd}>Add to cart</button>
             <button className="me-btn ghost" type="button" onClick={() => setOpen(null)}>Cancel</button>
@@ -113,6 +119,12 @@ export default function Shop({ member, Brand }) {
         )}
       </div>
       <div className="me-links"><Link to="/me/orders">My orders</Link><Link to="/me">Back</Link></div>
+      {count > 0 && !open && !cartSeen && (<>
+        <div className="shop-bar-space" />
+        <button type="button" className="shop-bar" onClick={() => document.getElementById('cart')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          <span>{count} item{count === 1 ? '' : 's'} in your cart</span><b>{money(total)} · View cart</b>
+        </button>
+      </>)}
     </>
   )
 }
