@@ -17,9 +17,12 @@ import Checkins from './pages/Checkins'
 import Notify from './pages/Notify'
 import Merch from './pages/Merch'
 import MemberApp from './me/MemberApp'
+import DemoGate from './me/Demo'
+import { isDemo, endDemo } from './lib/demo'
 
 function Gate({ children }) {
   const { session, staff, loading } = useAuth()
+  if (isDemo()) return <DemoOn />
   if (!configured) return <Setup />
   if (loading) return <div className="login"><div className="card">Loading…</div></div>
   if (!session) return <Login />
@@ -32,6 +35,16 @@ function Setup() {
     <div className="login"><div className="card">
       <h1>WSFC Club CRM</h1>
       <p>Supabase is not configured. Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> (in <code>.env</code> locally, or Netlify environment variables) and rebuild.</p>
+    </div></div>
+  )
+}
+
+function DemoOn() {
+  return (
+    <div className="login"><div className="card">
+      <h1>Demo mode is on</h1>
+      <p>This browser is running the member app demo, so the staff console is switched off. <a href="/me">Back to the demo</a>, or leave it to use the console.</p>
+      <button className="btn" onClick={() => { endDemo(); window.location.reload() }}>Leave the demo</button>
     </div></div>
   )
 }
@@ -76,6 +89,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path="/me/*" element={<MemberApp />} />
+        <Route path="/demo" element={<DemoGate />} />
         <Route path="/*" element={<Console />} />
       </Routes>
     </BrowserRouter>
