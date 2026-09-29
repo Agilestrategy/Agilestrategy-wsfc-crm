@@ -255,7 +255,7 @@ function Products() {
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-        <p className="small muted" style={{ marginTop: 0 }}>The range members see in the app. Price is what the member pays (inc GST). Options are typed as <code>Size: S, M, L; Colour: Black, White</code>. Cost, set up, minimum and pre order drive run readiness and margin. Edit a cell and click away to save. Untick Active to hide an item.</p>
+        <p className="small muted" style={{ marginTop: 0 }}>The range members see in the app. Price is the list price inc GST, set 25% above the base as standard; Gold members see 10% off and Black 25% off (Settings tab). Tier = who can buy it: items above a member's tier show shaded with a "Black only" tag. Limited adds a badge. Options are typed as <code>Size: S, M, L; Colour: Black, White</code>. Edit a cell and click away to save.</p>
         <button className="btn primary" onClick={() => setAdding(!adding)}>{adding ? 'Close' : 'New product'}</button>
       </div>
       {msg && <div className={`alert ${/added/i.test(msg) ? 'ok' : 'err'}`}>{msg}</div>}
@@ -275,7 +275,7 @@ function Products() {
         </form>
       )}
       <table>
-        <thead><tr><th>Active</th><th>Product</th><th>Price inc GST</th><th>Options</th><th>Image URL</th><th>Code</th><th>Unit cost</th><th>Set up</th><th>Lot min</th><th>Pre order</th><th>Target</th><th>Closes</th><th>Stock</th><th>Sort</th></tr></thead>
+        <thead><tr><th>Active</th><th>Product</th><th>Price inc GST</th><th>Options</th><th>Image URL</th><th>Code</th><th>Unit cost</th><th>Set up</th><th>Lot min</th><th>Pre order</th><th>Target</th><th>Closes</th><th>Stock</th><th>Tier</th><th>Limited</th><th>Sort</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id} style={{ opacity: r.is_active ? 1 : .5 }}>
@@ -292,10 +292,12 @@ function Products() {
               <td><Num r={r} save={save} k="preorder_target" step="1" w={54} /></td>
               <td><input type="date" defaultValue={r.preorder_closes || ''} onBlur={(e) => e.target.value !== (r.preorder_closes || '') && save(r, { preorder_closes: e.target.value || null })} /></td>
               <td><Num r={r} save={save} k="stock_on_hand" step="1" w={54} /></td>
+              <td><select value={r.min_tier || ''} onChange={(e) => save(r, { min_tier: e.target.value || null })}><option value="">Everyone</option><option value="gold">Gold +</option><option value="black">Black only</option></select></td>
+              <td><input type="checkbox" checked={!!r.is_limited} onChange={(e) => save(r, { is_limited: e.target.checked })} /></td>
               <td><Num r={r} save={save} k="sort" step="1" w={54} /></td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan={14} className="muted">No products yet. Add one, or connect Shopify and press Sync now.</td></tr>}
+          {!rows.length && <tr><td colSpan={16} className="muted">No products yet. Add one, or connect Shopify and press Sync now.</td></tr>}
         </tbody>
       </table>
     </div>
@@ -308,7 +310,7 @@ function Settings({ settings, onSaved }) {
   useEffect(() => { supabase.from('shop_sync_log').select('*').order('ran_at', { ascending: false }).limit(15).then(({ data }) => setLog(data || [])) }, [settings])
   async function save(e) {
     e.preventDefault(); const f = new FormData(e.target)
-    const { error } = await supabase.from('shop_settings').update({ store_domain: f.get('store_domain') || null, store_url: f.get('store_url') || null, min_run: Number(f.get('min_run')) || 10, updated_at: new Date().toISOString() }).eq('id', 1)
+    const { error } = await supabase.from('shop_settings').update({ store_domain: f.get('store_domain') || null, store_url: f.get('store_url') || null, min_run: Number(f.get('min_run')) || 10, discount_gold: Number(f.get('discount_gold')) || 0, discount_black: Number(f.get('discount_black')) || 0, retail_markup_pct: Number(f.get('retail_markup_pct')) || 0, updated_at: new Date().toISOString() }).eq('id', 1)
     setMsg(error ? error.message : 'Saved.'); onSaved()
   }
   const site = window.location.origin
@@ -320,6 +322,12 @@ function Settings({ settings, onSaved }) {
         <label className="f">Shopify store domain<input name="store_domain" defaultValue={settings?.store_domain || ''} placeholder="wsfc-merch.myshopify.com" /></label>
         <label className="f">Public shop link (shown to members)<input name="store_url" defaultValue={settings?.store_url || ''} placeholder="https://shop.wsfc.co.nz" /></label>
         <label className="f">Minimum units per item per lot<input name="min_run" type="number" defaultValue={settings?.min_run || 10} /></label>
+        <div className="grid cols-3" style={{ gap: '.5rem' }}>
+          <label className="f">Gold discount %<input name="discount_gold" type="number" step="0.5" defaultValue={settings?.discount_gold ?? 10} /></label>
+          <label className="f">Black discount %<input name="discount_black" type="number" step="0.5" defaultValue={settings?.discount_black ?? 25} /></label>
+          <label className="f">Standard markup %<input name="retail_markup_pct" type="number" step="1" defaultValue={settings?.retail_markup_pct ?? 25} /></label>
+        </div>
+        <p className="small muted" style={{ margin: 0 }}>List prices sit the standard markup above the base price so tier discounts come off the top{settings?.repriced_at ? ` (range repriced ${fmtDate(settings.repriced_at)})` : ''}. Discounts apply to the whole range in the app and at checkout.</p>
         <button className="btn primary">Save</button>
         <div className="small muted">Last product sync {settings?.last_product_sync_at ? fmtDateTime(settings.last_product_sync_at) : 'never'} · last order sync {settings?.last_order_sync_at ? fmtDateTime(settings.last_order_sync_at) : 'never'}{settings?.last_sync_error ? ` · last error: ${settings.last_sync_error}` : ''}</div>
       </form>
