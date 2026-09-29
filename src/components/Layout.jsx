@@ -9,6 +9,8 @@ const links = [
   ['/checkins', 'Check-in codes'],
   ['/notify', 'Notifications'],
   ['/merch', 'Merchandise'],
+  ['/subscriptions', 'Subscriptions'],
+  ['/uptake', 'App uptake'],
   ['/import', 'Import'],
   ['/staff', 'Staff'],
 ]
