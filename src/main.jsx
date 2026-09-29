@@ -16,6 +16,8 @@ import Status from './pages/Status'
 import Checkins from './pages/Checkins'
 import Notify from './pages/Notify'
 import Merch from './pages/Merch'
+import Uptake from './pages/Uptake'
+import Subscriptions from './pages/Subscriptions'
 import MemberApp from './me/MemberApp'
 import DemoGate from './me/Demo'
 import { isDemo, endDemo } from './lib/demo'
@@ -75,6 +77,8 @@ function Console() {
             <Route path="/checkins" element={<Checkins />} />
             <Route path="/notify" element={<Notify />} />
             <Route path="/merch" element={<Merch />} />
+            <Route path="/uptake" element={<Uptake />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
