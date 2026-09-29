@@ -15,6 +15,7 @@ import Staff from './pages/Staff'
 import Status from './pages/Status'
 import Checkins from './pages/Checkins'
 import Notify from './pages/Notify'
+import Merch from './pages/Merch'
 import MemberApp from './me/MemberApp'
 
 function Gate({ children }) {
@@ -60,6 +61,7 @@ function Console() {
             <Route path="/status" element={<Status />} />
             <Route path="/checkins" element={<Checkins />} />
             <Route path="/notify" element={<Notify />} />
+            <Route path="/merch" element={<Merch />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
