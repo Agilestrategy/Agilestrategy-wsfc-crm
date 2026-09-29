@@ -12,12 +12,23 @@ const r1 = (n) => (n == null ? '–' : Math.round(Number(n) * 10) / 10)
 const r0 = (n) => (n == null ? '–' : Math.round(Number(n)))
 const dayKey = (d) => new Date(d).toLocaleDateString('en-CA', { timeZone: TZ })   // YYYY-MM-DD in NZ
 
-let cache = null
-export async function loadConditions() {
-  if (cache && Date.now() - cache.at < 10 * 60 * 1000) return cache.data
-  const r = await fetch('/.netlify/functions/conditions', { headers: { Accept: 'application/json' } })
+// Spots members fish from. Bite times are computed for each spot's own coordinates; weather and tides come per spot from the function.
+export const PLACES = {
+  whakatane: { name: 'Whakatāne', lat: -37.955, lng: 176.985 },
+  ohope: { name: 'Ōhope', lat: -37.975, lng: 177.10 },
+  opotiki: { name: 'Ōpōtiki', lat: -38.005, lng: 177.287 },
+}
+const PLACE_KEY = 'wsfc-place'
+const loadPlace = () => { try { const k = localStorage.getItem(PLACE_KEY); return PLACES[k] ? k : 'whakatane' } catch { return 'whakatane' } }
+const savePlace = (k) => { try { localStorage.setItem(PLACE_KEY, k) } catch { /* ignore */ } }
+
+const cache = {}
+export async function loadConditions(place = 'whakatane') {
+  const c = cache[place]
+  if (c && Date.now() - c.at < 10 * 60 * 1000) return c.data
+  const r = await fetch(`/.netlify/functions/conditions?place=${encodeURIComponent(place)}`, { headers: { Accept: 'application/json' } })
   if (!r.ok) throw new Error('conditions ' + r.status)
-  const data = await r.json(); cache = { at: Date.now(), data }; return data
+  const data = await r.json(); cache[place] = { at: Date.now(), data }; return data
 }
 
 // Sample payload for the demo or when the function is unreachable (offline, local dev without netlify).
@@ -36,9 +47,11 @@ function sample() {
 
 export default function Conditions({ compact = false }) {
   const [data, setData] = useState(null); const [err, setErr] = useState(false); const [day, setDay] = useState(0)
-  useEffect(() => { loadConditions().then(setData).catch(() => { setErr(true); setData(sample()) }) }, [])
+  const [place, setPlace] = useState(loadPlace)
+  useEffect(() => { setData(null); loadConditions(place).then(setData).catch(() => { setErr(true); setData(sample()) }) }, [place])
   const dates = useMemo(() => [0, 1].map((n) => new Date(Date.now() + n * 864e5)), [])
-  const sol = useMemo(() => solunar(dates[day]), [dates, day])
+  const sol = useMemo(() => solunar(dates[day], PLACES[place]), [dates, day, place])
+  const pickPlace = (k) => { setPlace(k); savePlace(k) }
   const now = new Date()
   const cur = data?.weather?.current, sea = data?.marine?.current
   const key = dayKey(dates[day])
@@ -51,9 +64,11 @@ export default function Conditions({ compact = false }) {
   return (
     <div className="me-card cond">
       <div className="cond-head">
-        <h2>Whakatāne {day === 0 ? 'today' : 'tomorrow'}</h2>
+        <h2>{PLACES[place].name} {day === 0 ? 'today' : 'tomorrow'}</h2>
         <div className="cond-tabs"><button type="button" className={day === 0 ? 'on' : ''} onClick={() => setDay(0)}>Today</button><button type="button" className={day === 1 ? 'on' : ''} onClick={() => setDay(1)}>Tomorrow</button></div>
       </div>
+
+      <div className="cond-places">{Object.entries(PLACES).map(([k, v]) => <button key={k} type="button" className={place === k ? 'on' : ''} onClick={() => pickPlace(k)}>{v.name}</button>)}</div>
 
       {day === 0 && cur && (
         <div className="cond-now">
@@ -105,7 +120,7 @@ export default function Conditions({ compact = false }) {
         </>
       )}
       {compact && <Link to="/me/conditions" className="cond-more">All tides, sun and moon</Link>}
-      <p className="cond-foot">{data?.attribution || 'Loading conditions…'}{err && !data?.sample ? ' (offline, showing sample)' : ''} Bite times: solunar calculation for Whakatāne.</p>
+      <p className="cond-foot">{data?.attribution || 'Loading conditions…'}{err && !data?.sample ? ' (offline, showing sample)' : ''} Bite times: solunar calculation for {PLACES[place].name}.</p>
     </div>
   )
 }

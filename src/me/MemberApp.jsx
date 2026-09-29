@@ -197,7 +197,7 @@ function Orders({ member }) {
           <h2>{o.order_number} <span className="me-muted" style={{ fontWeight: 400, fontSize: '.85em' }}>{fmtDate(o.shopify_created_at)}</span></h2>
           <p><b>{o.status === 'awaiting_payment' && o.payment_method === 'stripe' ? 'Confirming payment…' : STATUS[o.status] || o.status}</b></p>
           {o.shop_order_items.map((i) => <p key={i.id} className="me-muted">{i.quantity} × {i.title}{i.variant_title ? ` (${i.variant_title})` : ''}</p>)}
-          <p className="me-muted">Total ${Number(o.total || 0).toFixed(2)}</p>
+          <p className="me-muted">Total ${Number(o.total || 0).toFixed(2)}{Number(o.discount_amount) > 0 ? ` (includes your ${o.member_tier} member discount of $${Number(o.discount_amount).toFixed(2)})` : ''}</p>
         </div>
       ))}
       <div className="me-links"><Link to="/me">Back</Link></div>
@@ -225,7 +225,8 @@ function Field({ label, type = 'text', value, onChange, ...rest }) {
 
 function Details({ member, reload }) {
   const [f, setF] = useState({ first_name: member.first_name || '', last_name: member.last_name || '', preferred_name: member.preferred_name || '', mobile: member.mobile || '', phone: member.phone || '',
-    email: member.email || '', date_of_birth: member.date_of_birth || '', address_line1: member.address_line1 || '', suburb: member.suburb || '', city: member.city || '', postcode: member.postcode || '', boat_name: member.boat_name || '' })
+    email: member.email || '', date_of_birth: member.date_of_birth || '', address_line1: member.address_line1 || '', suburb: member.suburb || '', city: member.city || '', postcode: member.postcode || '',
+    boat_name: member.boat_name || '', boat_call_sign: member.boat_call_sign || '', boat_length: member.boat_length || '', boat_make: member.boat_make || '' })
   const [msg, setMsg] = useState(''); const nav = useNavigate()
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   async function save(e) {
@@ -244,7 +245,10 @@ function Details({ member, reload }) {
         <Field label="Date of birth" type="date" value={f.date_of_birth} onChange={set('date_of_birth')} />
         <AddressField value={f.address_line1} onChange={set('address_line1')} onPlace={(a) => setF((cur) => ({ ...cur, ...a }))} />
         <div className="me-grid"><Field label="Suburb" value={f.suburb} onChange={set('suburb')} /><Field label="Town / city" value={f.city} onChange={set('city')} /></div>
-        <Field label="Postcode" value={f.postcode} onChange={set('postcode')} /><Field label="Boat name (if you have one)" value={f.boat_name} onChange={set('boat_name')} />
+        <Field label="Postcode" value={f.postcode} onChange={set('postcode')} />
+        <h2 style={{ margin: '.4rem 0 0' }}>Your boat <span className="me-muted" style={{ fontWeight: 400 }}>(optional)</span></h2>
+        <div className="me-grid"><Field label="Boat name" value={f.boat_name} onChange={set('boat_name')} /><Field label="Call sign" value={f.boat_call_sign} onChange={set('boat_call_sign')} /></div>
+        <div className="me-grid"><Field label="Length" value={f.boat_length} onChange={set('boat_length')} placeholder="e.g. 6.2 m" /><Field label="Make" value={f.boat_make} onChange={set('boat_make')} /></div>
         {msg && <p className="me-ok">{msg}</p>}
         <button className="me-btn">Save my details</button>
         <button type="button" className="me-btn ghost" onClick={() => nav('/me')}>Back</button>

@@ -144,3 +144,17 @@
 .plan > b { grid-area: price; font-size: 1.05rem; }
 .plan-sub { grid-area: sub; font-size: .75rem; opacity: .7; }
 .cond-more { display: inline-block; margin-top: .7rem; font-weight: 700; color: inherit; font-size: .9rem; }
+
+/* Tier perks in the shop */
+.shop-perk { margin: .5rem 0 0; font-size: .85rem; padding: .5rem .7rem; border-radius: 10px; background: rgba(232,134,58,.12); }
+:root[data-tier="black"] .shop-perk { background: rgba(231,199,79,.15); }
+.shop-tile { position: relative; }
+.shop-tile.locked { opacity: .55; filter: grayscale(.7); cursor: not-allowed; }
+.shop-tile.locked .shop-ph { background: linear-gradient(135deg, #2a2a2a, #000); color: #E7C74F; }
+.shop-badge { position: absolute; top: .5rem; left: .5rem; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: .2rem .5rem; border-radius: 999px; background: #E7C74F; color: #1A1A1A; }
+.shop-badge.lock { background: #000; color: #E7C74F; }
+.shop-tile-body s { opacity: .55; margin-right: .3rem; }
+.cond-places { display: flex; gap: .35rem; margin-top: .6rem; }
+.cond-places button { font: inherit; font-size: .78rem; padding: .3rem .7rem; min-height: 32px; border-radius: 999px; border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; cursor: pointer; }
+.cond-places button.on { background: rgba(0,0,0,.08); font-weight: 700; border-color: transparent; }
+:root[data-tier="black"] .cond-places button { border-color: rgba(255,255,255,.3); } :root[data-tier="black"] .cond-places button.on { background: rgba(255,255,255,.14); }
