@@ -28,7 +28,7 @@ function seed() {
   const members = [{
     id: MEMBER_ID, auth_user_id: DEMO_USER.id, member_number: '1060', first_name: 'Sam', last_name: 'Rangi', preferred_name: 'Sam', full_name: 'Sam Rangi',
     email: DEMO_USER.email, mobile: '021 000 0000', phone: null, status: 'active', status_tier: 'gold', financial_until: '2027-06-30', joined_on: '2019-08-01',
-    address_line1: '12 Harbour View Road', suburb: 'Ohope', city: 'Whakatāne', postcode: '3121', boat_name: 'Reel Deal', date_of_birth: '1982-03-14',
+    address_line1: '12 Harbour View Road', suburb: 'Ohope', city: 'Whakatāne', postcode: '3121', boat_name: 'Reel Deal', boat_call_sign: 'ZMW2140', boat_length: '6.5 m', boat_make: 'Stabicraft', date_of_birth: '1982-03-14',
     is_household_primary: true, push_opt_in: false, category_id: 'cat-senior', membership_categories: { name: 'Senior' },
   }]
   const engagements = [
@@ -73,8 +73,10 @@ function seed() {
   ]
   const membership_categories = [
     { id: 'cat-senior', code: 'SEN', name: 'Senior', annual_fee: 98, is_family: false, is_active: true, sort_order: 10 },
-    { id: 'cat-family', code: 'FAM', name: 'Family', annual_fee: 140, is_family: true, is_active: true, sort_order: 20 },
-    { id: 'cat-junior', code: 'JUN', name: 'Junior', annual_fee: 25, is_family: false, is_active: true, sort_order: 30 },
+    { id: 'cat-student', code: 'STU', name: 'Student', annual_fee: 67, is_family: false, is_active: true, sort_order: 15 },
+    { id: 'cat-junior', code: 'JUN', name: 'Junior', annual_fee: 31, is_family: false, is_active: true, sort_order: 20 },
+    { id: 'cat-family', code: 'FAM', name: 'Family', annual_fee: 186, is_family: true, is_active: true, sort_order: 30 },
+    { id: 'cat-social', code: 'SOC', name: 'Social', annual_fee: 57, is_family: false, is_active: true, sort_order: 40 },
   ]
   const F = (code, label, per_year, premium_pct, sort) => ({ code, label, per_year, premium_pct, sort, is_active: true })
   const billing_frequencies = [F('weekly', 'Weekly', 52, 15, 10), F('fortnightly', 'Fortnightly', 26, 15, 20), F('monthly', 'Monthly', 12, 15, 30), F('quarterly', 'Quarterly', 4, 10, 40), F('six_monthly', 'Six monthly', 2, 5, 50), F('annual', 'Annual', 1, 0, 60)]
