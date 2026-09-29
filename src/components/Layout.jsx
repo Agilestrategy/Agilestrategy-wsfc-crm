@@ -8,6 +8,7 @@ const links = [
   ['/status', 'Status programme'],
   ['/checkins', 'Check-in codes'],
   ['/notify', 'Notifications'],
+  ['/merch', 'Merchandise'],
   ['/import', 'Import'],
   ['/staff', 'Staff'],
 ]
