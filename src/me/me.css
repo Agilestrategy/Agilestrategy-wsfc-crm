@@ -50,3 +50,21 @@
 .me-checkin.ok .me-big { color: #1E7B34; } .me-checkin.bad .me-big { color: #B3261E; }
 .me-list { list-style: none; padding: 0; margin: 0 0 .8rem; }
 .me-list li { display: grid; grid-template-columns: 1fr auto auto; gap: .6rem; padding: .5rem 0; border-bottom: 1px solid rgba(0,0,0,.08); font-size: .9rem; }
+/* Shop */
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.shop-tile { background: var(--me-card); color: var(--me-ink); border: 0; border-radius: 14px; padding: 0; overflow: hidden; text-align: left; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,.12); font: inherit; }
+.shop-tile img, .shop-ph { width: 100%; aspect-ratio: 1; object-fit: cover; display: grid; place-items: center; }
+.shop-ph { background: linear-gradient(135deg, #24405a, #1B2F3E); color: #E7C74F; font-size: 2.4rem; font-weight: 800; }
+.shop-tile-body { padding: .55rem .7rem .7rem; display: grid; gap: .1rem; }
+.shop-tile-body b { font-size: .92rem; line-height: 1.2; }
+.shop-tile-body span { font-size: .9rem; opacity: .85; }
+.shop-tile-body em { font-style: normal; font-size: .72rem; color: #E8863A; font-weight: 700; }
+.shop-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.shop-chip { font: inherit; font-size: .85rem; padding: .35rem .7rem; border-radius: 999px; border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; cursor: pointer; }
+.shop-chip.on { background: var(--me-accent); color: #fff; border-color: var(--me-accent); }
+:root[data-tier="gold"] .shop-chip.on, :root[data-tier="silver"] .shop-chip.on { color: #fff; }
+.shop-qty { display: inline-flex; align-items: center; border: 1.5px solid rgba(0,0,0,.15); border-radius: 999px; overflow: hidden; }
+.shop-qty button { font: inherit; font-size: 1.1rem; width: 36px; height: 36px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.shop-qty span { min-width: 28px; text-align: center; font-weight: 700; }
+.shop-x { border: 0; background: transparent; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
+.me-btn:disabled { opacity: .5; }

@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useParams, Navigate } from 'react-rou
 import { supabase, configured, fmtDate } from '../lib/supabase'
 import { enablePush, disablePush, currentPushState, pushSupported, isIOS, isStandalone, registerSW } from '../lib/push'
 import './me.css'
+import Shop from './Shop'
 
 const TIER = {
   black: { label: 'Black', blurb: 'Our most active members. Thank you.' },
@@ -45,6 +46,8 @@ export default function MemberApp() {
         <Route path="/checkin/:code" element={<Checkin member={member} reload={loadMember} />} />
         <Route path="/details" element={<Details member={member} reload={loadMember} />} />
         <Route path="/activity" element={<Activity member={member} />} />
+        <Route path="/orders" element={<Orders member={member} />} />
+        <Route path="/shop" element={<Shop member={member} Brand={Brand} />} />
         <Route path="*" element={<Navigate to="/me" replace />} />
       </Routes>
     </div>
@@ -140,9 +143,38 @@ function Home({ member, reload }) {
       <div className="me-links">
         <Link to="/me/details">My details</Link>
         <Link to="/me/activity">My activity</Link>
+        <Link to="/me/shop">Shop 60th merch</Link>
+        <Link to="/me/orders">My merch orders</Link>
         <a href="#" onClick={(e) => { e.preventDefault(); supabase.auth.signOut() }}>Sign out</a>
       </div>
       <p className="me-foot">Whakatāne Sportfishing Club · 60 years on the water</p>
+    </>
+  )
+}
+
+function Orders({ member }) {
+  const [rows, setRows] = useState(null); const [shop, setShop] = useState(null)
+  const STATUS = { awaiting_payment: 'Awaiting payment (pay at the bar)', paid: 'Paid, waiting for the next run', in_next_run: 'In this week\u2019s production run', sent_to_mark: 'In production', at_club: 'At the club, ready to collect', collected: 'Collected', cancelled: 'Cancelled' }
+  const q = new URLSearchParams(window.location.search); const placed = q.get('placed'); const paid = q.get('paid')
+  useEffect(() => {
+    supabase.from('shop_orders').select('*, shop_order_items(*)').order('shopify_created_at', { ascending: false }).then(({ data }) => setRows(data || []))
+    supabase.from('shop_settings').select('store_url').eq('id', 1).maybeSingle().then(({ data }) => setShop(data?.store_url || null))
+  }, [member.id])
+  return (
+    <>
+      <Brand sub="My merch orders" />
+      {paid && <div className="me-card"><p className="me-ok" style={{ margin: 0 }}>Thanks, payment received. Your order goes into the next Friday run and we will let you know when it is at the club.</p></div>}
+      {placed && <div className="me-card"><p className="me-ok" style={{ margin: 0 }}>Order placed. Pay at the bar next time you are in and it goes into the next Friday run.</p></div>}
+      <div className="me-card"><h2>Club merchandise</h2><p className="me-muted">Order in the app and collect at the club. Orders go into production every Friday.</p><Link className="me-btn" to="/me/shop">Open the shop</Link>{shop && <a className="me-btn ghost" href={shop} target="_blank" rel="noreferrer" style={{ marginLeft: '.4rem' }}>Web store</a>}</div>
+      {rows === null ? <div className="me-card">Loading…</div> : rows.length === 0 ? <div className="me-card"><p className="me-muted">No orders yet.</p></div> : rows.map((o) => (
+        <div key={o.id} className="me-card">
+          <h2>{o.order_number} <span className="me-muted" style={{ fontWeight: 400, fontSize: '.85em' }}>{fmtDate(o.shopify_created_at)}</span></h2>
+          <p><b>{STATUS[o.status] || o.status}</b></p>
+          {o.shop_order_items.map((i) => <p key={i.id} className="me-muted">{i.quantity} × {i.title}{i.variant_title ? ` (${i.variant_title})` : ''}</p>)}
+          <p className="me-muted">Total ${Number(o.total || 0).toFixed(2)}</p>
+        </div>
+      ))}
+      <div className="me-links"><Link to="/me">Back</Link></div>
     </>
   )
 }
