@@ -42,7 +42,7 @@ export default async (req) => {
       if (Array.isArray(allowed) && allowed.length && !allowed.includes(opts[k])) return json({ error: `Choose a ${k.toLowerCase()} for ${p.title}` }, 400)
     }
     const variant = Object.keys(p.options || {}).map((k) => opts[k]).filter(Boolean).join(' / ') || null
-    lines.push({ product: p, quantity: Math.min(20, Math.floor(Number(it.quantity))), variant, price: Number(p.retail_price) })
+    lines.push({ product: p, quantity: Math.max(1, Math.min(20, Math.floor(Number(it.quantity)))), variant, price: Number(p.retail_price) })
   }
   const total = lines.reduce((a, l) => a + l.price * l.quantity, 0)
   const name = member ? [member.first_name, member.last_name].filter(Boolean).join(' ') : (user.user_metadata?.full_name || null)
