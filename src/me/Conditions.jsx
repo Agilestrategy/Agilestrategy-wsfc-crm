@@ -33,14 +33,18 @@ export async function loadConditions(place = 'whakatane') {
 
 // Sample payload for the demo or when the function is unreachable (offline, local dev without netlify).
 function sample() {
-  const now = new Date(); const k = dayKey(now)
-  const t = (h) => { const d = new Date(now); d.setHours(h, 0, 0, 0); return d.toISOString() }
+  const now = new Date()
+  const days = [0, 1, 2].map((n) => dayKey(new Date(now.valueOf() + n * 864e5)))
+  const t = (dayOffset, h, m = 0) => { const d = new Date(now); d.setDate(d.getDate() + dayOffset); d.setHours(h, m, 0, 0); return d.toISOString() }
   return {
     fetched_at: now.toISOString(), sample: true,
     weather: { current: { temperature_2m: 17.4, apparent_temperature: 16.1, weather_code: 2, wind_speed_10m: 9, wind_gusts_10m: 14, wind_direction_10m: 225, is_day: 1 },
-      daily: { time: [k], weather_code: [2], temperature_2m_max: [19], temperature_2m_min: [11], precipitation_probability_max: [15], wind_speed_10m_max: [13], wind_gusts_10m_max: [20], wind_direction_10m_dominant: [230] } },
+      daily: { time: days, weather_code: [2, 1, 61], temperature_2m_max: [19, 20, 17], temperature_2m_min: [11, 12, 13], precipitation_probability_max: [15, 10, 70], wind_speed_10m_max: [13, 10, 22], wind_gusts_10m_max: [20, 16, 34], wind_direction_10m_dominant: [230, 40, 320] } },
     marine: { current: { wave_height: 0.9, wave_period: 7.5, wave_direction: 40, swell_wave_height: 0.7, swell_wave_period: 9, swell_wave_direction: 35, sea_surface_temperature: 15.5 } },
-    tides: [{ type: 'low', time: t(3), height: 0.3 }, { type: 'high', time: t(9), height: 1.8 }, { type: 'low', time: t(15), height: 0.3 }, { type: 'high', time: t(21), height: 1.8 }],
+    tides: [
+      { type: 'low', time: t(0, 3, 10), height: 0.3 }, { type: 'high', time: t(0, 9, 20), height: 1.8 }, { type: 'low', time: t(0, 15, 35), height: 0.3 }, { type: 'high', time: t(0, 21, 45), height: 1.8 },
+      { type: 'low', time: t(1, 3, 55), height: 0.2 }, { type: 'high', time: t(1, 10, 5), height: 1.9 }, { type: 'low', time: t(1, 16, 20), height: 0.3 }, { type: 'high', time: t(1, 22, 30), height: 1.8 },
+    ],
     attribution: 'Sample conditions for the demo. Live app: Open-Meteo weather and sea state, model tide estimates (not for navigation).',
   }
 }

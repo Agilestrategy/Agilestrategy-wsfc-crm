@@ -30,7 +30,7 @@ export default function MemberApp() {
 
   const loadMember = async () => {
     if (!session) { setMember(null); setLoading(false); return }
-    setLoading(true)
+    if (!member) setLoading(true)   // first load shows the splash; later refreshes (after saving details, checking in) stay silent so pages keep their state
     // app_link_me links this sign in to the member row (household primary first) and stamps first / last seen for uptake tracking.
     const { data: linked } = await supabase.rpc('app_link_me')
     const row = Array.isArray(linked) ? linked[0] : linked
