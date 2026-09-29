@@ -39,7 +39,8 @@ function seed() {
     { id: uid(), member_id: MEMBER_ID, type: 'volunteer', points: 40, occurred_at: daysAgo(40, 9), reference: 'Weigh station' },
     { id: uid(), member_id: MEMBER_ID, type: 'swipe_bar', points: 10, occurred_at: daysAgo(51), reference: 'BAR' },
   ]
-  const P = (title, price, sort, options = {}, extra = {}) => ({ id: 'p-' + sort, title, retail_price: price, sort, options, description: extra.description || null, image_url: null, is_preorder: !!extra.is_preorder, preorder_target: extra.preorder_target || null, lead_time: null, is_active: true, status: 'active', supplier_code: extra.code || null })
+  // List prices sit 25% above the base price (whole dollars); Gold takes 10% off, Black 25% off and unlocks the limited range.
+  const P = (title, price, sort, options = {}, extra = {}) => ({ id: 'p-' + sort, title, base_price: price, retail_price: Math.ceil(price * 1.25), sort, options, description: extra.description || null, image_url: null, is_preorder: !!extra.is_preorder, preorder_target: extra.preorder_target || null, lead_time: null, is_active: true, status: 'active', supplier_code: extra.code || null, min_tier: extra.min_tier || null, is_limited: !!extra.is_limited })
   const SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL']
   const shop_products = [
     P('Staple tee', 55, 10, { Size: SIZES, Colour: ['Black', 'White'] }, { description: 'AS Colour Staple tee with the 60th anniversary badge.', code: '5001' }),
@@ -48,7 +49,7 @@ function seed() {
     P('Dual Tech fishing shirt', 110, 40, { Size: SIZES }, { description: 'Long sleeve, UPF 50, quick dry. Built for the water.', code: 'DT' }),
     P('Custom fishing polo', 130, 50, { Size: SIZES }, { description: 'Fully sublimated club polo. Pre order, runs once 50 are in.', is_preorder: true, preorder_target: 50 }),
     P('Cap', 55, 60, { Colour: ['Black', 'Navy', 'Sand'] }),
-    P('Snapback', 65, 70, { Colour: ['Black', 'Navy'] }),
+    P('Snapback', 65, 70, { Colour: ['Black', 'Navy'] }, { min_tier: 'black', is_limited: true, description: 'Limited run. Black members only.' }),
     P('Beanie', 55, 80, { Colour: ['Black', 'Navy'] }),
     P('Woven patch', 20, 90),
     P('Can cooler', 18, 100, { Colour: ['Black', 'Navy'] }),
@@ -57,7 +58,8 @@ function seed() {
     P('Key ring', 10, 130),
     P('Dishcloth', 10, 140),
     P('Sticker', 5, 150),
-    P('Bar runner', 60, 160),
+    P('Bar runner', 60, 160, {}, { min_tier: 'black', is_limited: true, description: 'Numbered 60th bar runner. Black members only.' }),
+    P('60th tournament jacket', 180, 170, { Size: SIZES }, { min_tier: 'black', is_limited: true, description: 'Limited to 60 pieces, numbered. Black members only.' }),
   ]
   const o1 = uid(), o2 = uid()
   const shop_orders = [
@@ -76,7 +78,7 @@ function seed() {
   ]
   const F = (code, label, per_year, premium_pct, sort) => ({ code, label, per_year, premium_pct, sort, is_active: true })
   const billing_frequencies = [F('weekly', 'Weekly', 52, 15, 10), F('fortnightly', 'Fortnightly', 26, 15, 20), F('monthly', 'Monthly', 12, 15, 30), F('quarterly', 'Quarterly', 4, 10, 40), F('six_monthly', 'Six monthly', 2, 5, 50), F('annual', 'Annual', 1, 0, 60)]
-  return { members, engagements, shop_products, shop_orders, shop_order_items, shop_settings: [{ id: 1, store_url: null, min_run: 10 }], push_subscriptions: [], membership_categories, billing_frequencies, member_subscriptions: [], next_order: 1012, checkins: {} }
+  return { members, engagements, shop_products, shop_orders, shop_order_items, shop_settings: [{ id: 1, store_url: null, min_run: 10, discount_gold: 10, discount_black: 25, retail_markup_pct: 25 }], push_subscriptions: [], membership_categories, billing_frequencies, member_subscriptions: [], next_order: 1012, checkins: {} }
 }
 
 function loadDb() { try { const j = JSON.parse(localStorage.getItem(DB_KEY) || 'null'); if (j && j.members) return j } catch { /* ignore */ } const d = seed(); saveDb(d); return d }
@@ -155,15 +157,19 @@ export const demoClient = {
 // Shop checkout without the Netlify function: creates the order here and either "pays" (mock screen) or holds it for the bar.
 export function demoPlaceOrder(items, pay) {
   const db = loadDb()
+  const tier = db.members[0].status_tier; const RANK = { silver: 1, gold: 2, black: 3 }
+  const discount = tier === 'black' ? 25 : tier === 'gold' ? 10 : 0
   const lines = []
   for (const it of items) {
     const p = db.shop_products.find((x) => x.id === it.product_id); if (!p) continue
+    if (p.min_tier && (RANK[tier] || 0) < (RANK[p.min_tier] || 0)) continue
     const variant = Object.keys(p.options || {}).map((k) => it.options?.[k]).filter(Boolean).join(' / ') || null
-    lines.push({ product_id: p.id, title: p.title, variant_title: variant, quantity: Math.max(1, Math.min(20, Number(it.quantity) || 1)), price: Number(p.retail_price) })
+    lines.push({ product_id: p.id, title: p.title, variant_title: variant, quantity: Math.max(1, Math.min(20, Number(it.quantity) || 1)), list_price: Number(p.retail_price), price: Math.round(Number(p.retail_price) * (1 - discount / 100) * 100) / 100 })
   }
-  const total = lines.reduce((a, l) => a + l.price * l.quantity, 0)
+  const listTotal = lines.reduce((a, l) => a + l.list_price * l.quantity, 0)
+  const total = Math.round(lines.reduce((a, l) => a + l.price * l.quantity, 0) * 100) / 100
   const id = uid(); const order_number = `WSFC-${db.next_order++}`
-  db.shop_orders.push({ id, order_number, shopify_created_at: new Date().toISOString(), email: DEMO_USER.email, customer_name: 'Sam Rangi', member_id: MEMBER_ID, status: 'awaiting_payment', payment_method: pay, paid_at: null, total, subtotal: total, currency: 'NZD', note: null })
+  db.shop_orders.push({ id, order_number, shopify_created_at: new Date().toISOString(), email: DEMO_USER.email, customer_name: 'Sam Rangi', member_id: MEMBER_ID, status: 'awaiting_payment', payment_method: pay, paid_at: null, total, subtotal: total, currency: 'NZD', note: null, member_tier: tier, discount_pct: discount, discount_amount: Math.round((listTotal - total) * 100) / 100 })
   lines.forEach((l) => db.shop_order_items.push({ id: uid(), order_id: id, ...l }))
   saveDb(db)
   return { order_id: id, order_number, total, url: pay === 'stripe' ? `/me/pay?order=${id}` : null }
