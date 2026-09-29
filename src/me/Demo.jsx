@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isDemo, startDemo, endDemo, resetDemo, checkPin, demoMarkPaid, demoSetTier } from '../lib/demo'
+import { isDemo, startDemo, endDemo, resetDemo, checkPin, demoMarkPaid, demoSetTier, demoActivateSubscription } from '../lib/demo'
 import { fmtDate } from '../lib/supabase'
 import './me.css'
 
@@ -24,7 +24,7 @@ export default function DemoGate() {
           {err && <p className="me-err">{err}</p>}
           <button className="me-btn" disabled={busy}>{busy ? 'Opening…' : 'Open the demo'}</button>
         </form>
-        <p className="me-muted">You will be signed in as Sam Rangi, a Gold member. Try the check in codes BAR and DOOR, buy some 60th merch, and switch the tier in the bar at the top to see the card change colour.</p>
+        <p className="me-muted">You will be signed in as Sam Rangi, a Gold member. Try the check in codes BAR and DOOR, see today's tides and bite times, set up a membership subscription your way, buy some 60th merch, and switch the tier in the bar at the top to see the card change colour.</p>
         <p className="me-muted" style={{ fontSize: '.75rem' }}>Whakatāne Sportfishing Club · built by Agile Strategy</p>
         {isDemo() && <button type="button" className="me-btn ghost" onClick={() => nav('/me')}>Back into the demo</button>}
       </div>
@@ -46,7 +46,11 @@ export function DemoBanner({ member }) {
 
 // Stand in for the hosted payment page. Looks the part, charges nothing.
 export function DemoPay() {
-  const q = new URLSearchParams(window.location.search); const orderId = q.get('order')
+  const q = new URLSearchParams(window.location.search); const subId = q.get('sub')
+  return subId ? <DemoSubscribePay subId={subId} /> : <DemoOrderPay orderId={q.get('order')} />
+}
+
+function DemoOrderPay({ orderId }) {
   const [order, setOrder] = useState(null); const [busy, setBusy] = useState(false)
   useEffect(() => { try { const db = JSON.parse(localStorage.getItem('wsfc-demo-db') || '{}'); const o = (db.shop_orders || []).find((x) => x.id === orderId); if (o) o.items = (db.shop_order_items || []).filter((i) => i.order_id === o.id); setOrder(o || null) } catch { setOrder(null) } }, [orderId])
   function pay() { setBusy(true); setTimeout(() => { demoMarkPaid(orderId); window.location.href = `/me/orders?paid=${orderId}` }, 1100) }
@@ -66,6 +70,32 @@ export function DemoPay() {
           <a className="me-btn ghost" href={`/me/shop?cancelled=${orderId}`}>Cancel and go back</a>
         </div>
         <p className="me-muted" style={{ fontSize: '.75rem' }}>Demo only. In the live app this step is Stripe Checkout with Apple Pay, Google Pay and card. Order {order.order_number} · {fmtDate(order.shopify_created_at)}</p>
+      </div>
+    </div>
+  )
+}
+
+// Mock of Stripe Checkout in subscription mode.
+function DemoSubscribePay({ subId }) {
+  const [sub, setSub] = useState(null); const [busy, setBusy] = useState(false)
+  useEffect(() => { try { const db = JSON.parse(localStorage.getItem('wsfc-demo-db') || '{}'); const s = (db.member_subscriptions || []).find((x) => x.id === subId); if (s) s.category = (db.membership_categories || []).find((c) => c.id === s.category_id)?.name; setSub(s || null) } catch { setSub(null) } }, [subId])
+  const EVERY = { weekly: 'week', fortnightly: '2 weeks', monthly: 'month', quarterly: '3 months', six_monthly: '6 months', annual: 'year' }
+  function pay() { setBusy(true); setTimeout(() => { demoActivateSubscription(subId); window.location.href = `/me/membership?subscribed=${subId}` }, 1100) }
+  if (!sub) return <div className="me-card">Subscription not found. <a href="/me/membership">Back</a></div>
+  return (
+    <div className="demo-pay">
+      <div className="me-card">
+        <div className="demo-pay-head"><span>Whakatāne Sportfishing Club</span><b>Secure payment · demo</b></div>
+        <h2 style={{ marginTop: '.6rem' }}>Subscribe: ${Number(sub.instalment).toFixed(2)} every {EVERY[sub.frequency] || sub.frequency}</h2>
+        <p className="me-muted">WSFC {sub.category} membership, {sub.frequency.replace('_', ' ')}. Renews automatically until you cancel.</p>
+        <button type="button" className="demo-wallet" disabled={busy} onClick={pay}>{busy ? 'Processing…' : 'Subscribe with wallet'}</button>
+        <div className="demo-or">or pay with card</div>
+        <div className="me-form">
+          <input value="4242 4242 4242 4242" readOnly /><div className="me-grid"><input value="12 / 29" readOnly /><input value="123" readOnly /></div>
+          <button type="button" className="me-btn" disabled={busy} onClick={pay}>{busy ? 'Processing…' : 'Subscribe'}</button>
+          <a className="me-btn ghost" href="/me/membership?cancelled=1">Cancel and go back</a>
+        </div>
+        <p className="me-muted" style={{ fontSize: '.75rem' }}>Demo only. Live, this is Stripe Checkout in subscription mode with Apple Pay, Google Pay, card and NZ bank account debit once enabled.</p>
       </div>
     </div>
   )

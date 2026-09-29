@@ -4,6 +4,8 @@ import { supabase, configured, fmtDate } from '../lib/supabase'
 import { enablePush, disablePush, currentPushState, pushSupported, isIOS, isStandalone, registerSW } from '../lib/push'
 import './me.css'
 import Shop from './Shop'
+import Membership from './Membership'
+import Conditions from './Conditions'
 import { isDemo } from '../lib/demo'
 import { DemoBanner, DemoPay } from './Demo'
 
@@ -29,6 +31,13 @@ export default function MemberApp() {
   const loadMember = async () => {
     if (!session) { setMember(null); setLoading(false); return }
     setLoading(true)
+    // app_link_me links this sign in to the member row (household primary first) and stamps first / last seen for uptake tracking.
+    const { data: linked } = await supabase.rpc('app_link_me')
+    const row = Array.isArray(linked) ? linked[0] : linked
+    if (row?.id) {
+      const { data: cat } = row.category_id ? await supabase.from('membership_categories').select('name').eq('id', row.category_id).maybeSingle() : { data: null }
+      setMember({ ...row, membership_categories: cat || row.membership_categories || null }); setLoading(false); return
+    }
     const { data } = await supabase.from('members').select('*, membership_categories(name)')
       .or(`auth_user_id.eq.${session.user.id},email.ilike.${session.user.email}`).order('is_household_primary', { ascending: false }).limit(1).maybeSingle()
     setMember(data || null); setLoading(false)
@@ -51,6 +60,8 @@ export default function MemberApp() {
         <Route path="/activity" element={<Activity member={member} />} />
         <Route path="/orders" element={<Orders member={member} />} />
         <Route path="/shop" element={<Shop member={member} Brand={Brand} />} />
+        <Route path="/membership" element={<Membership member={member} Brand={Brand} reload={loadMember} />} />
+        <Route path="/conditions" element={<><Brand sub="Whakatāne conditions" /><Conditions /><div className="me-links"><Link to="/me">Back</Link></div></>} />
         {isDemo() && <Route path="/pay" element={<DemoPay />} />}
         <Route path="*" element={<Navigate to="/me" replace />} />
       </Routes>
@@ -121,9 +132,11 @@ function Home({ member, reload }) {
         <div className="me-tier-label">{active ? `${t?.label || 'Member'} member` : 'Membership not current'}</div>
         <div className="me-tier-name">{member.first_name} {member.last_name}</div>
         <div className="me-tier-meta">{member.member_number ? `#${member.member_number}` : ''}{member.membership_categories?.name ? ` · ${member.membership_categories.name}` : ''}{member.financial_until ? ` · paid to ${fmtDate(member.financial_until)}` : ''}</div>
-        <div className="me-tier-blurb">{active ? t?.blurb : 'See the office to renew and get back on the water with us.'}</div>
+        <div className="me-tier-blurb">{active ? t?.blurb : <>Renew in the app and get back on the water with us. <Link to="/me/membership" style={{ color: 'inherit' }}>Renew now</Link></>}</div>
         {pts && <div className="me-tier-stats"><span><b>{pts.visits}</b> check-ins</span><span><b>{pts.points}</b> points</span><span>last 90 days</span></div>}
       </div>
+
+      <Conditions compact />
 
       <div className="me-card">
         <h2>Check in</h2>
@@ -145,6 +158,8 @@ function Home({ member, reload }) {
       </div>
 
       <div className="me-links">
+        <Link to="/me/membership">My membership</Link>
+        <Link to="/me/conditions">Tides and bite times</Link>
         <Link to="/me/details">My details</Link>
         <Link to="/me/activity">My activity</Link>
         <Link to="/me/shop">Shop 60th merch</Link>
