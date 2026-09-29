@@ -11,6 +11,8 @@ export default function Dashboard() {
   const [cats, setCats] = useState([])
   const [batches, setBatches] = useState([])
   const [merch, setMerch] = useState(null)
+  const [uptake, setUptake] = useState(null)
+  const [subs, setSubs] = useState(null)
 
   useEffect(() => {
     supabase.from('v_dashboard').select('*').single().then(({ data }) => setD(data))
@@ -24,6 +26,8 @@ export default function Dashboard() {
       setCats(Object.values(m).sort((a, b) => b.total - a.total))
     })
     supabase.from('v_merch_summary').select('*').single().then(({ data }) => setMerch(data))
+    supabase.from('v_app_uptake').select('*').single().then(({ data }) => setUptake(data))
+    supabase.from('v_subscriptions_summary').select('*').then(({ data }) => setSubs(data || []))
     supabase.from('import_batches').select('*').order('created_at', { ascending: false }).limit(5).then(({ data }) => setBatches(data || []))
   }, [])
 
@@ -48,6 +52,14 @@ export default function Dashboard() {
         <Stat n={d?.contacts_subscribed} l="Subscribed email contacts" s={d && `${d.contacts_total} in list · ${d.contacts_unsubscribed} unsub · ${d.contacts_cleaned} bounced`} tone="orange" />
         <Stat n={d?.contacts_matched} l="Contacts matched to a member" s={d && pct(d.contacts_matched, d.contacts_total) + ' of list'} />
       </div>
+      {uptake && (
+        <div className="grid cols-4" style={{ marginBottom: '1.25rem' }}>
+          <Link to="/uptake" style={{ textDecoration: 'none' }}><Stat n={pct(uptake.on_app, uptake.active_members) || '0%'} l="Active members on the app" s={`${uptake.on_app} of ${uptake.active_members}`} tone="navy" /></Link>
+          <Link to="/uptake" style={{ textDecoration: 'none' }}><Stat n={uptake.reachable_email + uptake.reachable_mobile_only} l="Not yet on the app, reachable" s={`${uptake.reachable_email} by email · ${uptake.reachable_mobile_only} SMS only`} tone="orange" /></Link>
+          <Link to="/uptake" style={{ textDecoration: 'none' }}><Stat n={uptake.push_on} l="Notifications on" s={`${uptake.active_30d} opened the app in 30 days`} /></Link>
+          <Link to="/subscriptions" style={{ textDecoration: 'none' }}><Stat n={(subs || []).reduce((a, r) => a + Number(r.active || 0), 0)} l="Paying by subscription" s={'$' + (subs || []).reduce((a, r) => a + Number(r.annualised || 0), 0).toFixed(0) + ' a year'} /></Link>
+        </div>
+      )}
       {merch && (
         <div className="grid cols-4" style={{ marginBottom: '1.25rem' }}>
           <Link to="/merch" style={{ textDecoration: 'none' }}><Stat n={merch.orders_new} l="Merch orders waiting" s="for the Friday run" tone="orange" /></Link>
