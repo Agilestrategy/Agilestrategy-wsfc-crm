@@ -69,7 +69,14 @@ function seed() {
     { id: uid(), order_id: o1, product_id: 'p-100', title: 'Can cooler', variant_title: 'Navy', quantity: 1, price: 18 },
     { id: uid(), order_id: o2, product_id: 'p-40', title: 'Dual Tech fishing shirt', variant_title: 'XL', quantity: 1, price: 110 },
   ]
-  return { members, engagements, shop_products, shop_orders, shop_order_items, shop_settings: [{ id: 1, store_url: null, min_run: 10 }], push_subscriptions: [], next_order: 1012, checkins: {} }
+  const membership_categories = [
+    { id: 'cat-senior', code: 'SEN', name: 'Senior', annual_fee: 98, is_family: false, is_active: true, sort_order: 10 },
+    { id: 'cat-family', code: 'FAM', name: 'Family', annual_fee: 140, is_family: true, is_active: true, sort_order: 20 },
+    { id: 'cat-junior', code: 'JUN', name: 'Junior', annual_fee: 25, is_family: false, is_active: true, sort_order: 30 },
+  ]
+  const F = (code, label, per_year, premium_pct, sort) => ({ code, label, per_year, premium_pct, sort, is_active: true })
+  const billing_frequencies = [F('weekly', 'Weekly', 52, 15, 10), F('fortnightly', 'Fortnightly', 26, 15, 20), F('monthly', 'Monthly', 12, 15, 30), F('quarterly', 'Quarterly', 4, 10, 40), F('six_monthly', 'Six monthly', 2, 5, 50), F('annual', 'Annual', 1, 0, 60)]
+  return { members, engagements, shop_products, shop_orders, shop_order_items, shop_settings: [{ id: 1, store_url: null, min_run: 10 }], push_subscriptions: [], membership_categories, billing_frequencies, member_subscriptions: [], next_order: 1012, checkins: {} }
 }
 
 function loadDb() { try { const j = JSON.parse(localStorage.getItem(DB_KEY) || 'null'); if (j && j.members) return j } catch { /* ignore */ } const d = seed(); saveDb(d); return d }
@@ -130,6 +137,7 @@ export const demoClient = {
   },
   rpc: async (fn, args) => {
     const db = loadDb()
+    if (fn === 'app_link_me') return { data: [db.members[0]], error: null }
     if (fn === 'member_checkin') {
       const code = String(args?.p_code || '').toUpperCase(); const pts = { BAR: 10, DOOR: 5 }[code]
       if (!pts) return { data: { ok: false, error: 'That code is not one of ours. Try BAR or DOOR.' }, error: null }
@@ -159,6 +167,31 @@ export function demoPlaceOrder(items, pay) {
   lines.forEach((l) => db.shop_order_items.push({ id: uid(), order_id: id, ...l }))
   saveDb(db)
   return { order_id: id, order_number, total, url: pay === 'stripe' ? `/me/pay?order=${id}` : null }
+}
+
+// Subscription set up without Stripe: creates the row and sends the member to the mock payment screen.
+export function demoSubscribe(categoryId, frequency) {
+  const db = loadDb()
+  const c = db.membership_categories.find((x) => x.id === categoryId) || db.membership_categories[0]
+  const f = db.billing_frequencies.find((x) => x.code === frequency) || db.billing_frequencies.at(-1)
+  const instalment = Math.round((c.annual_fee * (1 + f.premium_pct / 100) / f.per_year) * 100) / 100
+  const id = uid()
+  db.member_subscriptions.push({ id, member_id: MEMBER_ID, category_id: c.id, frequency: f.code, annual_fee: c.annual_fee, premium_pct: f.premium_pct, instalment, status: 'incomplete', current_period_end: null, started_at: null, cancel_at_period_end: false, created_at: new Date().toISOString() })
+  saveDb(db)
+  return { id, url: `/me/pay?sub=${id}` }
+}
+
+export function demoActivateSubscription(subId) {
+  const db = loadDb(); const s = db.member_subscriptions.find((x) => x.id === subId)
+  if (s && s.status === 'incomplete') {
+    const days = { weekly: 7, fortnightly: 14, monthly: 30, quarterly: 91, six_monthly: 182, annual: 365 }[s.frequency] || 365
+    s.status = 'active'; s.started_at = new Date().toISOString(); s.current_period_end = new Date(Date.now() + days * 864e5).toISOString()
+    const m = db.members[0]; m.status = 'active'; m.category_id = s.category_id
+    const until = new Date(Math.max(Date.now(), new Date(m.financial_until || 0).valueOf()) + 8 * 864e5); if (until > new Date(m.financial_until || 0)) m.financial_until = until.toISOString().slice(0, 10)
+    m.membership_categories = { name: db.membership_categories.find((c) => c.id === s.category_id)?.name }
+    saveDb(db)
+  }
+  return s
 }
 
 export function demoMarkPaid(orderId) {
