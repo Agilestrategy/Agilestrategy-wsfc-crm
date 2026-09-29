@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [d, setD] = useState(null)
   const [cats, setCats] = useState([])
   const [batches, setBatches] = useState([])
+  const [merch, setMerch] = useState(null)
 
   useEffect(() => {
     supabase.from('v_dashboard').select('*').single().then(({ data }) => setD(data))
@@ -22,6 +23,7 @@ export default function Dashboard() {
       }
       setCats(Object.values(m).sort((a, b) => b.total - a.total))
     })
+    supabase.from('v_merch_summary').select('*').single().then(({ data }) => setMerch(data))
     supabase.from('import_batches').select('*').order('created_at', { ascending: false }).limit(5).then(({ data }) => setBatches(data || []))
   }, [])
 
@@ -46,6 +48,14 @@ export default function Dashboard() {
         <Stat n={d?.contacts_subscribed} l="Subscribed email contacts" s={d && `${d.contacts_total} in list · ${d.contacts_unsubscribed} unsub · ${d.contacts_cleaned} bounced`} tone="orange" />
         <Stat n={d?.contacts_matched} l="Contacts matched to a member" s={d && pct(d.contacts_matched, d.contacts_total) + ' of list'} />
       </div>
+      {merch && (
+        <div className="grid cols-4" style={{ marginBottom: '1.25rem' }}>
+          <Link to="/merch" style={{ textDecoration: 'none' }}><Stat n={merch.orders_new} l="Merch orders waiting" s="for the Friday run" tone="orange" /></Link>
+          <Link to="/merch" style={{ textDecoration: 'none' }}><Stat n={merch.units_waiting} l="Merch units waiting" s="against the 10 minimum" /></Link>
+          <Link to="/merch" style={{ textDecoration: 'none' }}><Stat n={merch.orders_at_club} l="Merch at the club" s="ready to collect" /></Link>
+          <Link to="/merch" style={{ textDecoration: 'none' }}><Stat n={'$' + Number(merch.sales_30d || 0).toFixed(0)} l="Merch sales, 30 days" s={merch.last_sync ? 'synced from Shopify' : 'Shopify not connected'} tone="navy" /></Link>
+        </div>
+      )}
 
       <div className="grid cols-2">
         <div className="card">
