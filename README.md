@@ -38,3 +38,18 @@ Vite + React front end, Supabase (Postgres, auth, RLS) backend, deployed on Netl
 3. Renewals: T-30 / T-7 / T+7 reminders, expired-card door catch, season rollover.
 4. Status programme: tier calculation from `engagements`, member-facing status portal (magic link).
 5. Club website rebuild on the club's domain, with the forms above as the single intake.
+
+## Merchandise (in app shop, Shopify optional)
+
+Members buy in the member app (`/me/shop`): Stripe Checkout (Apple Pay, Google Pay, card) or order now and pay at the bar. Prices come from `shop_products.retail_price`; options (size, colour) from `shop_products.options`. Functions: `shop-order` (creates the order with server side pricing, opens Stripe Checkout) and `stripe-webhook` (marks paid, queues the member push). Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`; without them the shop still works with pay at the bar. Migration `0005_shop_in_app.sql` (run the enum line first, then the file; seeds the 16 item 60th range).
+
+### Shopify (optional web store)
+
+Shopify runs the shop (products, checkout, payment, local pickup at the club). The CRM mirrors products and orders
+and tracks each order through the club's own flow: Paid → In next run → Sent to Mark → At club → Collected.
+
+- Migration `supabase/migrations/0004_merch_shopify.sql` (run in the SQL editor, idempotent).
+- Console page **Merchandise** (`/merch`): orders, run readiness against the 10 unit minimum, Friday runs (build, CSV, print, mark sent, mark received), products and club-side cost fields, settings and sync log.
+- Member app **My merch orders** (`/me/orders`), and a push notification when an order reaches the club.
+- Netlify functions: `shopify-sync` (scheduled every 15 min), `shopify-sync-now` (Sync now button, staff only), `shopify-webhook` (orders/products webhooks, HMAC verified).
+- Netlify env: `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_ADMIN_TOKEN` (custom app, scopes read_products / read_orders / read_customers), optional `SHOPIFY_WEBHOOK_SECRET`, plus `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
