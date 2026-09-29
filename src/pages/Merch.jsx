@@ -231,6 +231,14 @@ function Runs({ onChange, settings }) {
   )
 }
 
+// Cell editors live outside Products so React keeps the same input mounted between renders.
+function Num({ r, k, save, step = '0.01', w = 84 }) {
+  return <input type="number" step={step} defaultValue={r[k] ?? ''} style={{ width: w }} onBlur={(e) => { const v = e.target.value === '' ? null : Number(e.target.value); if (v !== r[k]) save(r, { [k]: v }) }} />
+}
+function Txt({ r, k, save, w = 120, ph }) {
+  return <input defaultValue={r[k] || ''} placeholder={ph} style={{ width: w }} onBlur={(e) => e.target.value !== (r[k] || '') && save(r, { [k]: e.target.value || null })} />
+}
+
 // ---------------------------------------------------------------------------
 function Products() {
   const [rows, setRows] = useState([]); const [msg, setMsg] = useState(''); const [adding, setAdding] = useState(false)
@@ -239,8 +247,6 @@ function Products() {
   async function save(r, patch) { const { error } = await supabase.from('shop_products').update(patch).eq('id', r.id); setMsg(error ? error.message : ''); load() }
   const optsToText = (o) => Object.entries(o || {}).map(([k, v]) => `${k}: ${(v || []).join(', ')}`).join('; ')
   const textToOpts = (t) => { const o = {}; for (const part of t.split(';')) { const [k, v] = part.split(':'); if (k && v) o[k.trim()] = v.split(',').map((x) => x.trim()).filter(Boolean) } return o }
-  const Num = ({ r, k, step = '0.01', w = 84 }) => <input type="number" step={step} defaultValue={r[k] ?? ''} style={{ width: w }} onBlur={(e) => { const v = e.target.value === '' ? null : Number(e.target.value); if (v !== r[k]) save(r, { [k]: v }) }} />
-  const Txt = ({ r, k, w = 120, ph }) => <input defaultValue={r[k] || ''} placeholder={ph} style={{ width: w }} onBlur={(e) => e.target.value !== (r[k] || '') && save(r, { [k]: e.target.value || null })} />
   async function add(e) {
     e.preventDefault(); const f = new FormData(e.target)
     const { error } = await supabase.from('shop_products').insert({ title: f.get('title'), retail_price: Number(f.get('retail_price')) || null, supplier_code: f.get('supplier_code') || null, unit_cost: Number(f.get('unit_cost')) || null, setup_cost: Number(f.get('setup_cost')) || 0, min_run: Number(f.get('min_run')) || null, options: textToOpts(f.get('options') || ''), description: f.get('description') || null, image_url: f.get('image_url') || null, source: 'club', status: 'active', sort: Number(f.get('sort')) || 100 })
@@ -274,19 +280,19 @@ function Products() {
           {rows.map((r) => (
             <tr key={r.id} style={{ opacity: r.is_active ? 1 : .5 }}>
               <td><input type="checkbox" checked={r.is_active} onChange={(e) => save(r, { is_active: e.target.checked })} /></td>
-              <td style={{ minWidth: 180 }}><div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>{r.image_url && <img src={r.image_url} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 6 }} />}<Txt r={r} k="title" w={160} /></div>{r.source === 'shopify' && <span className="pill unknown">Shopify</span>}</td>
-              <td><Num r={r} k="retail_price" w={80} /></td>
+              <td style={{ minWidth: 180 }}><div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>{r.image_url && <img src={r.image_url} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 6 }} />}<Txt r={r} save={save} k="title" w={160} /></div>{r.source === 'shopify' && <span className="pill unknown">Shopify</span>}</td>
+              <td><Num r={r} save={save} k="retail_price" w={80} /></td>
               <td><input defaultValue={optsToText(r.options)} style={{ width: 210 }} placeholder="Size: S, M, L; Colour: Black" onBlur={(e) => e.target.value !== optsToText(r.options) && save(r, { options: textToOpts(e.target.value) })} /></td>
-              <td><Txt r={r} k="image_url" w={140} ph="https://…" /></td>
-              <td><Txt r={r} k="supplier_code" w={80} /></td>
-              <td><Num r={r} k="unit_cost" w={70} /></td>
-              <td><Num r={r} k="setup_cost" w={60} /></td>
-              <td><Num r={r} k="min_run" step="1" w={54} /></td>
+              <td><Txt r={r} save={save} k="image_url" w={140} ph="https://…" /></td>
+              <td><Txt r={r} save={save} k="supplier_code" w={80} /></td>
+              <td><Num r={r} save={save} k="unit_cost" w={70} /></td>
+              <td><Num r={r} save={save} k="setup_cost" w={60} /></td>
+              <td><Num r={r} save={save} k="min_run" step="1" w={54} /></td>
               <td><input type="checkbox" checked={r.is_preorder} onChange={(e) => save(r, { is_preorder: e.target.checked })} /></td>
-              <td><Num r={r} k="preorder_target" step="1" w={54} /></td>
+              <td><Num r={r} save={save} k="preorder_target" step="1" w={54} /></td>
               <td><input type="date" defaultValue={r.preorder_closes || ''} onBlur={(e) => e.target.value !== (r.preorder_closes || '') && save(r, { preorder_closes: e.target.value || null })} /></td>
-              <td><Num r={r} k="stock_on_hand" step="1" w={54} /></td>
-              <td><Num r={r} k="sort" step="1" w={54} /></td>
+              <td><Num r={r} save={save} k="stock_on_hand" step="1" w={54} /></td>
+              <td><Num r={r} save={save} k="sort" step="1" w={54} /></td>
             </tr>
           ))}
           {!rows.length && <tr><td colSpan={14} className="muted">No products yet. Add one, or connect Shopify and press Sync now.</td></tr>}
