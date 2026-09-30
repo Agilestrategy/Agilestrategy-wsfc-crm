@@ -38,7 +38,7 @@ export default function Staff() {
             <label className="f">Email<input name="email" type="email" required /></label>
             <label className="f">Role<select name="role" defaultValue="staff">{['admin', 'committee', 'staff', 'readonly'].map(r => <option key={r}>{r}</option>)}</select></label>
             <button className="btn primary">Add</button>
-            <p className="small muted">Roles are informational for now; every active staff member has full access. Read-only enforcement comes with the member portal phase.</p>
+            <p className="small muted">Readonly can open every page but cannot change anything (enforced in the database). Staff and committee can edit members, merch, fees and notifications. Admins also manage this list, shop settings and the Status programme.</p>
           </form>
         )}
       </div>
