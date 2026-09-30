@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { supabase } from '../lib/supabase'
 
 const links = [
   ['/', 'Dashboard'],
@@ -17,6 +19,9 @@ const links = [
 
 export default function Layout({ children }) {
   const { staff, signOut } = useAuth()
+  const [admin, setAdmin] = useState(null)
+  useEffect(() => { if (staff?.role === 'readonly') supabase.from('staff').select('full_name, email').eq('role', 'admin').eq('is_active', true).order('created_at').limit(1).maybeSingle().then(({ data }) => setAdmin(data)) }, [staff?.role])
+  const first = (n) => (n || '').split(' ')[0]
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -36,7 +41,7 @@ export default function Layout({ children }) {
         </div>
       </aside>
       <main className="main watermark">
-        {staff?.role === 'readonly' && <div className="alert" style={{ marginBottom: '1rem' }}>Read only access: you can see everything here, but changes will not save. Ask an admin if you need to edit.</div>}
+        {staff?.role === 'readonly' && <div className="alert" style={{ marginBottom: '1rem' }}>Kia ora {first(staff.full_name) || 'there'}, you have a look around pass: every page is open to you, nothing you click will change anything. Want to edit something? Give {admin ? first(admin.full_name) || admin.email : 'Paul'} a shout.</div>}
         {children}
       </main>
     </div>
