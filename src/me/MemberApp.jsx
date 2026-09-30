@@ -157,15 +157,15 @@ function Home({ member, reload }) {
         {msg && <p className="me-muted">{msg}</p>}
       </div>
 
-      <div className="me-links">
-        <Link to="/me/membership">My membership</Link>
-        <Link to="/me/conditions">Tides and bite times</Link>
-        <Link to="/me/details">My details</Link>
-        <Link to="/me/activity">My activity</Link>
-        <Link to="/me/shop">Shop 60th merch</Link>
-        <Link to="/me/orders">My merch orders</Link>
-        <a href="#" onClick={(e) => { e.preventDefault(); supabase.auth.signOut() }}>Sign out</a>
-      </div>
+      <nav className="me-nav" aria-label="Member menu">
+        <Link to="/me/shop"><b>Shop</b><span>60th merch range</span></Link>
+        <Link to="/me/orders"><b>My orders</b><span>merch and collection</span></Link>
+        <Link to="/me/membership"><b>My membership</b><span>renew and pay my way</span></Link>
+        <Link to="/me/conditions"><b>Tides and bites</b><span>Whakatāne, Ōhope, Ōpōtiki</span></Link>
+        <Link to="/me/details"><b>My details</b><span>contact and boat</span></Link>
+        <Link to="/me/activity"><b>My activity</b><span>check ins and points</span></Link>
+      </nav>
+      <div className="me-links"><a href="#" onClick={(e) => { e.preventDefault(); supabase.auth.signOut() }}>Sign out</a></div>
       <p className="me-foot">Whakatāne Sportfishing Club · 60 years on the water</p>
     </>
   )

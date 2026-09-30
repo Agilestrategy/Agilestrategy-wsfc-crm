@@ -158,3 +158,11 @@
 .cond-places button { font: inherit; font-size: .78rem; padding: .3rem .7rem; min-height: 32px; border-radius: 999px; border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; cursor: pointer; }
 .cond-places button.on { background: rgba(0,0,0,.08); font-weight: 700; border-color: transparent; }
 :root[data-tier="black"] .cond-places button { border-color: rgba(255,255,255,.3); } :root[data-tier="black"] .cond-places button.on { background: rgba(255,255,255,.14); }
+
+/* Home menu tiles */
+.me-nav { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.me-nav a { display: grid; gap: .15rem; padding: .85rem .9rem; min-height: 64px; border-radius: 14px; background: var(--me-card); color: var(--me-ink); text-decoration: none; box-shadow: 0 6px 24px rgba(0,0,0,.12); border-left: 4px solid var(--me-accent); -webkit-tap-highlight-color: transparent; }
+.me-nav a:active { transform: scale(.98); }
+.me-nav b { font-size: .98rem; }
+.me-nav span { font-size: .74rem; opacity: .7; line-height: 1.2; }
+:root[data-tier="black"] .me-nav a { border: 1px solid rgba(231,199,79,.25); border-left: 4px solid var(--me-accent); }
