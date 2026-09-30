@@ -35,7 +35,10 @@ export default function Layout({ children }) {
           <button onClick={signOut}>Sign out</button>
         </div>
       </aside>
-      <main className="main watermark">{children}</main>
+      <main className="main watermark">
+        {staff?.role === 'readonly' && <div className="alert" style={{ marginBottom: '1rem' }}>Read only access: you can see everything here, but changes will not save. Ask an admin if you need to edit.</div>}
+        {children}
+      </main>
     </div>
   )
 }
